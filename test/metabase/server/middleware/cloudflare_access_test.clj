@@ -10,8 +10,7 @@
   (:require
    [clojure.test :refer :all]
    [metabase.server.middleware.cloudflare-access :as mw.cloudflare-access]
-   [metabase.sso.cloudflare-zero-trust.settings :as settings]
-   [metabase.test.util :as tu]))
+   [metabase.sso.cloudflare-zero-trust.settings :as settings]))
 
 (set! *warn-on-reflection* true)
 
@@ -42,38 +41,34 @@
 
 (deftest disabled-passes-through-test
   (testing "When Cloudflare Zero Trust is disabled, all requests pass through"
-    (tu/with-temporary-setting-values [:cloudflare-zero-trust-enabled false]
+    (with-redefs [settings/cloudflare-zero-trust-enabled (constantly false)]
       (let [response (call-middleware (make-request))]
         (is (= 200 (:status response)))))))
 
 (deftest no-jwt-optional-mode-test
   (testing "When require-auth=false and no JWT, request passes through"
-    (tu/with-temporary-setting-values
-      [:cloudflare-zero-trust-enabled true
-       :cloudflare-zero-trust-require-auth false
-       :cloudflare-zero-trust-team-name "test-team"
-       :cloudflare-zero-trust-audience-tag "test-audience"]
+    (with-redefs [settings/cloudflare-zero-trust-enabled       (constantly true)
+                  settings/cloudflare-zero-trust-require-auth  (constantly false)
+                  settings/path-allowed?                       (constantly false)]
       (let [response (call-middleware (make-request))]
         (is (= 200 (:status response)))))))
 
 (deftest no-jwt-require-mode-test
   (testing "When require-auth=true and no JWT, request is rejected with 401"
-    (tu/with-temporary-setting-values
-      [:cloudflare-zero-trust-enabled true
-       :cloudflare-zero-trust-require-auth true
-       :cloudflare-zero-trust-team-name "test-team"
-       :cloudflare-zero-trust-audience-tag "test-audience"]
+    (with-redefs [settings/cloudflare-zero-trust-enabled       (constantly true)
+                  settings/cloudflare-zero-trust-require-auth  (constantly true)
+                  settings/path-allowed?                       (constantly false)]
       (let [response (call-middleware (make-request))]
         (is (= 401 (:status response)))))))
 
 (deftest allowlisted-path-test
   (testing "Allowlisted paths bypass auth check even in require-auth mode"
-    (tu/with-temporary-setting-values
-      [:cloudflare-zero-trust-enabled true
-       :cloudflare-zero-trust-require-auth true
-       :cloudflare-zero-trust-team-name "test-team"
-       :cloudflare-zero-trust-audience-tag "test-audience"
-       :cloudflare-zero-trust-allowed-paths "/api/health,/api/setup"]
+    (with-redefs [settings/cloudflare-zero-trust-enabled       (constantly true)
+                  settings/cloudflare-zero-trust-require-auth  (constantly true)
+                  settings/path-allowed?                       (fn [path]
+                                                                 (or (= path "/api/health")
+                                                                     (and path
+                                                                          (clojure.string/starts-with? path "/api/setup"))))]
       ;; Health endpoint should pass
       (let [response (call-middleware (make-request :uri "/api/health"))]
         (is (= 200 (:status response))))
@@ -86,11 +81,9 @@
 
 (deftest existing-session-passes-through-test
   (testing "Request with existing session passes through without JWT validation"
-    (tu/with-temporary-setting-values
-      [:cloudflare-zero-trust-enabled true
-       :cloudflare-zero-trust-require-auth false
-       :cloudflare-zero-trust-team-name "test-team"
-       :cloudflare-zero-trust-audience-tag "test-audience"]
+    (with-redefs [settings/cloudflare-zero-trust-enabled       (constantly true)
+                  settings/cloudflare-zero-trust-require-auth  (constantly false)
+                  settings/path-allowed?                       (constantly false)]
       (let [response (call-middleware (make-request :session-key "existing-session-key"))]
         (is (= 200 (:status response)))
         ;; The session key should be preserved
@@ -98,11 +91,9 @@
 
 (deftest invalid-jwt-optional-mode-test
   (testing "Invalid JWT in optional mode allows request to pass through"
-    (tu/with-temporary-setting-values
-      [:cloudflare-zero-trust-enabled true
-       :cloudflare-zero-trust-require-auth false
-       :cloudflare-zero-trust-team-name "test-team"
-       :cloudflare-zero-trust-audience-tag "test-audience"]
+    (with-redefs [settings/cloudflare-zero-trust-enabled       (constantly true)
+                  settings/cloudflare-zero-trust-require-auth  (constantly false)
+                  settings/path-allowed?                       (constantly false)]
       ;; Use an obviously invalid JWT
       (let [response (call-middleware
                       (make-request :headers {"cf-access-jwt-assertion" "invalid.jwt.token"}))]
@@ -113,11 +104,9 @@
 
 (deftest invalid-jwt-require-mode-test
   (testing "Invalid JWT in require-auth mode rejects request"
-    (tu/with-temporary-setting-values
-      [:cloudflare-zero-trust-enabled true
-       :cloudflare-zero-trust-require-auth true
-       :cloudflare-zero-trust-team-name "test-team"
-       :cloudflare-zero-trust-audience-tag "test-audience"]
+    (with-redefs [settings/cloudflare-zero-trust-enabled       (constantly true)
+                  settings/cloudflare-zero-trust-require-auth  (constantly true)
+                  settings/path-allowed?                       (constantly false)]
       ;; Use an obviously invalid JWT
       (let [response (call-middleware
                       (make-request :headers {"cf-access-jwt-assertion" "invalid.jwt.token"}))]

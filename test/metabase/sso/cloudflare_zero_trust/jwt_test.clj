@@ -16,7 +16,7 @@
    [java-time.api :as t]
    [metabase.sso.cloudflare-zero-trust.jwt :as cf-jwt]
    [metabase.sso.cloudflare-zero-trust.settings :as settings]
-   [metabase.test.util :as tu]))
+   [metabase.test :as mt]))
 
 (set! *warn-on-reflection* true)
 
@@ -105,7 +105,7 @@ FSQLmSztbSlqSjEJzWZgwLwL7mQsZeoO45DoOopQoWrudLLKKHHhuIewJ8HaqG4U
 (defmacro with-cf-settings
   "Execute body with Cloudflare Zero Trust settings configured."
   [& body]
-  `(tu/with-temporary-setting-values
+  `(mt/with-temporary-setting-values
      [:cloudflare-zero-trust-team-name ~test-team-name
       :cloudflare-zero-trust-audience-tag ~test-audience
       :cloudflare-zero-trust-enabled true]

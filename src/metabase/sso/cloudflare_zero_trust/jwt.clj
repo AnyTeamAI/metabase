@@ -129,12 +129,10 @@
     (let [[header-b64 _ _] (str/split token #"\." 3)]
       (when-not header-b64
         (throw (ex-info "Invalid JWT format" {:status-code 401})))
-      (-> header-b64
-          (.getBytes "UTF-8")
-          java.util.Base64/getUrlDecoder
-          (.decode)
-          (String. "UTF-8")
-          (json/parse-string true)))
+      (let [decoder (java.util.Base64/getUrlDecoder)]
+        (-> (.decode decoder ^String header-b64)
+            (String. "UTF-8")
+            (json/parse-string true))))
     (catch Exception e
       (throw (ex-info "Failed to decode JWT header"
                       {:status-code 401}
