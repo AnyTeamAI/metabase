@@ -191,11 +191,15 @@
   (when config/ee-available?
     (setting/get :other-sso-enabled?)))
 
+(defn- cloudflare-zero-trust-enabled? []
+  (setting/get :cloudflare-zero-trust-enabled))
+
 (defn sso-enabled?
   "Any SSO provider is configured and enabled"
   []
   (or (google-auth-enabled)
       (ldap-enabled)
+      (cloudflare-zero-trust-enabled?)
       (ee-sso-configured?)))
 
 (define-multi-setting google-auth-auto-create-accounts-domain
