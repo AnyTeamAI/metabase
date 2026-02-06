@@ -30,6 +30,14 @@
 (derive :provider/cloudflare-zero-trust :metabase.auth-identity.provider/provider)
 (derive :provider/cloudflare-zero-trust :metabase.auth-identity.provider/create-user-if-not-exists)
 
+;;; -------------------------------------------------- Event Hierarchy --------------------------------------------------
+
+;; Register Cloudflare Zero Trust events for audit logging
+(derive ::cloudflare-events :metabase/event)
+(derive :event/cloudflare-auth-success ::cloudflare-events)
+(derive :event/cloudflare-auth-failure ::cloudflare-events)
+(derive :event/cloudflare-user-provisioned ::cloudflare-events)
+
 ;;; -------------------------------------------------- Authentication --------------------------------------------------
 
 (methodical/defmethod auth-identity/authenticate :provider/cloudflare-zero-trust
