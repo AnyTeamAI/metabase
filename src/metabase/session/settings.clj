@@ -10,7 +10,6 @@
   :visibility :public
   :type       :boolean
   :default    true
-  :feature    :disable-password-login
   :audit      :raw-value
   :getter     (fn []
                 ;; if `:enable-password-login` has an *explicit* (non-default) value, and SSO is configured, use that;
