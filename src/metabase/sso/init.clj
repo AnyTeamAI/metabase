@@ -1,5 +1,6 @@
 (ns metabase.sso.init
   (:require
+   [metabase.sso.providers.cloudflare-zero-trust]
    [metabase.sso.providers.google]
    [metabase.sso.providers.ldap]
    [metabase.sso.providers.oidc]

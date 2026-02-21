@@ -6,6 +6,7 @@
    [metabase.config.core :as config]
    [metabase.server.middleware.auth :as mw.auth]
    [metabase.server.middleware.browser-cookie :as mw.browser-cookie]
+   [metabase.server.middleware.cloudflare-access :as mw.cloudflare-access]
    [metabase.server.middleware.exceptions :as mw.exceptions]
    [metabase.server.middleware.json :as mw.json]
    [metabase.server.middleware.log :as mw.log]
@@ -83,6 +84,7 @@
         #'mw.session/reset-session-timeout           ; Resets the timeout cookie for user activity to [[metabase.request.cookies/session-timeout]]
         #'mw.session/bind-current-user               ; Binds *current-user* and *current-user-id* if :metabase-user-id is non-nil
         #'mw.session/wrap-current-user-info          ; looks for :metabase-session-key and sets :metabase-user-id and other info if Session ID is valid
+        #'mw.cloudflare-access/wrap-cloudflare-access ; Cloudflare Zero Trust auth: creates session from CF JWT if no existing session
         #'mw.settings-cache/wrap-settings-cache-check ; check cookie to refresh settings cache if needed
         #'analytics/embedding-mw                     ; reads sdk client headers, binds them to *client* and *version*, and tracks sdk-response metrics
         #'mw.session/wrap-session-key                ; looks for a Metabase Session ID and assoc as :metabase-session-key
